@@ -31,6 +31,7 @@ static CTLineRef replaced_CTLineCreateWithAttributedString(
     CFAttributedStringRef string ) {
 	NSString *stringIT = (NSString*)CFAttributedStringGetString(string);
 	if ([stringIT containsString:effectiveString1] || [stringIT containsString:effectiveString2]) {
+		stringIT = @"don't support this text";
 		CFStringRef cfText = (__bridge CFStringRef)stringIT;
 		CFAttributedStringRef attribString = CFAttributedStringCreate (NULL, cfText, NULL);
 		CTLineRef line = CTLineCreateWithAttributedString(attribString);
