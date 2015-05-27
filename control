@@ -1,0 +1,9 @@
+Package: com.imokhles.antieffective
+Name: AntiEffective
+Depends: mobilesubstrate
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Anti Effective. Power issue
+Maintainer: iMokhles
+Author: iMokhles
+Section: Tweaks
