@@ -75,9 +75,9 @@ static CTLineRef replaced_CTLineCreateWithAttributedString(
 %ctor {
 
 	NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-	if ([bundleIdentifier isEqualToString:@"com.apple.CoreText"]) {
+	if ([bundleIdentifier isEqualToString:@"com.apple.CoreText"] || [bundleIdentifier isEqualToString:@"com.apple.springboard"]) {
 		MSHookFunction(CTLineCreateWithAttributedString, replaced_CTLineCreateWithAttributedString, &original_CTLineCreateWithAttributedString);
-	} else {
+	} else if ([bundleIdentifier isEqualToString:@"com.apple.Foundation"] || [bundleIdentifier isEqualToString:@"com.apple.springboard"]) {
 		%init(HookFoundation);
 	}
 }
