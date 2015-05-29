@@ -8,7 +8,7 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = AntiEffective
 AntiEffective_FILES = Tweak.xm
-AntiEffective_FRAMEWORKS = Foundation CoreText
+AntiEffective_FRAMEWORKS = Foundation CoreText UIKit
 AntiEffective_LIBRARIES = substrate
 include $(THEOS_MAKE_PATH)/tweak.mk
 

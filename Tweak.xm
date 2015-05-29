@@ -1,9 +1,18 @@
 #import <Foundation/Foundation.h>
 #import <CoreText/CoreText.h>
+#import <UIKit/UIKit.h>
 #import <substrate.h>
 
 static NSString *effectiveString1 = @"لُلُصّبُلُلصّبُررً";
 static NSString *effectiveString2 = @"ॣ ॣh ॣ ॣ";
+
+@interface SBApplication : NSObject
+- (id)displayName;
+@end
+
+@interface UIApplication (AntiEffective)
+- (id)_accessibilityFrontMostApplication;
+@end
 
 @interface NSString ( containsCategory )
 - (BOOL) containsString: (NSString*) substring;
@@ -22,6 +31,25 @@ static NSString *effectiveString2 = @"ॣ ॣh ॣ ॣ";
 
 @end
 
+%group HookFoundation
+id cfText;
+%hook NSCFAttributedString
+- (id)string {
+	CFAttributedStringRef stringAttr = NULL;
+	NSCFAttributedString *attString = self;
+	stringAttr = (CFAttributedStringRef )CFBridgingRetain(attString);
+	NSString *stringIT = (NSString*)CFAttributedStringGetString(stringAttr);
+	if ([stringIT containsString:effectiveString1] || [stringIT containsString:effectiveString2]) {
+		// stringIT = @"don't support this text"; // setting it to nothing better than an existe text
+		stringIT = @"";
+		cfText = stringIT;
+		return cfText;
+	} else {
+		return %orig;
+	}
+}
+%end
+%end
 
 extern "C" CTLineRef CTLineCreateWithAttributedString(
     CFAttributedStringRef string );
@@ -30,7 +58,9 @@ static CTLineRef (*original_CTLineCreateWithAttributedString)(
 static CTLineRef replaced_CTLineCreateWithAttributedString(
     CFAttributedStringRef string ) {
 	NSString *stringIT = (NSString*)CFAttributedStringGetString(string);
-	if ([stringIT containsString:effectiveString1] || [stringIT containsString:effectiveString2]) {
+	SBApplication *frontMostApplication = [[UIApplication sharedApplication] _accessibilityFrontMostApplication];
+	NSString *displayName = [frontMostApplication displayName];
+	if (([stringIT containsString:effectiveString1] || [stringIT containsString:effectiveString2]) && ![displayName isEqualToString:@"Facebook"]) {
 		// stringIT = @"don't support this text"; // setting it to nothing better than an existe text
 		stringIT = @"";
 		CFStringRef cfText = (__bridge CFStringRef)stringIT;
@@ -43,40 +73,11 @@ static CTLineRef replaced_CTLineCreateWithAttributedString(
 
 
 %ctor {
-    MSHookFunction(CTLineCreateWithAttributedString, replaced_CTLineCreateWithAttributedString, &original_CTLineCreateWithAttributedString);
+
+	NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+	if ([bundleIdentifier isEqualToString:@"com.apple.CoreText"]) {
+		MSHookFunction(CTLineCreateWithAttributedString, replaced_CTLineCreateWithAttributedString, &original_CTLineCreateWithAttributedString);
+	} else {
+		%init(HookFoundation);
+	}
 }
-
-/* How to Hook with Logos
-Hooks are written with syntax similar to that of an Objective-C @implementation.
-You don't need to #include <substrate.h>, it will be done automatically, as will
-the generation of a class list and an automatic constructor.
-
-%hook ClassName
-
-// Hooking a class method
-+ (id)sharedInstance {
-	return %orig;
-}
-
-// Hooking an instance method with an argument.
-- (void)messageName:(int)argument {
-	%log; // Write a message about this call, including its class, name and arguments, to the system log.
-
-	%orig; // Call through to the original function with its original arguments.
-	%orig(nil); // Call through to the original function with a custom argument.
-
-	// If you use %orig(), you MUST supply all arguments (except for self and _cmd, the automatically generated ones.)
-}
-
-// Hooking an instance method with no arguments.
-- (id)noArguments {
-	%log;
-	id awesome = %orig;
-	[awesome doSomethingElse];
-
-	return awesome;
-}
-
-// Always make sure you clean up after yourself; Not doing so could have grave consequences!
-%end
-*/
